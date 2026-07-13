@@ -7,6 +7,7 @@ SEED="/usr/local/share/pi-seed"
 
 if [ ! -f "${PI_AGENT}/settings.json" ]; then
     echo "Initializing snry dev space config from seed..."
+    mkdir -p "${PI_HOME}"
     mkdir -p "${PI_AGENT}"
 
     cp -a "${SEED}/." "${PI_AGENT}/"
