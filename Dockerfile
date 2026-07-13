@@ -48,7 +48,7 @@ ENV PI_CODING_AGENT_DIR=/home/snry/.pi/agent
 ENV BUN_INSTALL=/home/snry/.pi/bun
 ENV GOPATH=/home/snry/.pi/gopath
 ENV GOROOT=/home/snry/.pi/sdk/go
-ENV PATH="/home/snry/.pi/bin:/home/snry/.pi/gopath/bin:/home/snry/.pi/sdk/go/bin:/home/snry/.pi/bun/bin:/usr/local/bin:/usr/bin:/bin"
+ENV PATH="/home/snry/.pi/bin:/home/snry/.pi/gopath/bin:/home/snry/.pi/sdk/go/bin:/home/snry/.pi/bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
 
 EXPOSE 22
 VOLUME ["/home/snry/.pi"]
