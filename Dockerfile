@@ -31,6 +31,8 @@ RUN sed -i \
 COPY --from=oven/bun:1-debian /usr/local/bin/bun /usr/local/bin/bun
 COPY --from=oven/bun:1-debian /usr/local/bin/bunx /usr/local/bin/bunx
 
+RUN ln -sf /usr/local/bin/bun /usr/local/bin/node
+
 RUN groupadd --gid 1000 snry && \
     useradd --uid 1000 --gid snry --shell /bin/bash --create-home snry && \
     usermod -p '*' snry && \
