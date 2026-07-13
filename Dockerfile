@@ -42,7 +42,8 @@ ARG FD_VERSION
 ARG GH_VERSION
 ARG TARGETARCH
 
-RUN apt-get update && \
+RUN ARCH_ALT=$(printf '%s' "${TARGETARCH:-amd64}" | sed 's/amd64/x86_64/') && \
+    apt-get update && \
     apt-get install -y --no-install-recommends \
         ca-certificates \
         curl \
@@ -54,7 +55,8 @@ RUN apt-get update && \
         make \
         python3 \
         python3-pip \
-    && rm -rf /var/lib/apt/lists/*
+    && rm -rf /var/lib/apt/lists/* \
+    && echo "ARCH_ALT=${ARCH_ALT}" > /etc/snry-build-arch
 
 COPY --from=oven/bun:1-debian /usr/local/bin/bun /usr/local/bin/bun
 COPY --from=oven/bun:1-debian /usr/local/bin/bunx /usr/local/bin/bunx
@@ -75,17 +77,19 @@ ENV GOBIN=/home/snry/go/bin
 
 COPY --from=go-tools /go/bin/ /usr/local/bin/
 
-RUN ARCH=$(printf '%s' "${TARGETARCH:-amd64}" | sed 's/amd64/x86_64/') && \
-    curl -fsSL "https://github.com/bufbuild/buf/releases/download/v${BUF_VERSION}/buf-Linux-${ARCH}" \
+RUN ARCH_ALT=$(sed 's/amd64/x86_64/' <<< "${TARGETARCH:-amd64}") && \
+    curl -fsSL "https://github.com/bufbuild/buf/releases/download/v${BUF_VERSION}/buf-Linux-${ARCH_ALT}" \
     -o /usr/local/bin/buf && \
     chmod +x /usr/local/bin/buf
 
-RUN curl -fsSL "https://github.com/BurntSushi/ripgrep/releases/download/${RIPGREP_VERSION}/ripgrep-${RIPGREP_VERSION}-${TARGETARCH:-amd64}-unknown-linux-musl.tar.gz" \
+RUN ARCH_ALT=$(sed 's/amd64/x86_64/' <<< "${TARGETARCH:-amd64}") && \
+    curl -fsSL "https://github.com/BurntSushi/ripgrep/releases/download/${RIPGREP_VERSION}/ripgrep-${RIPGREP_VERSION}-${ARCH_ALT}-unknown-linux-musl.tar.gz" \
     | tar xz -C /tmp && \
     mv /tmp/ripgrep-*/rg /usr/local/bin/rg && \
     rm -rf /tmp/ripgrep-*
 
-RUN curl -fsSL "https://github.com/sharkdp/fd/releases/download/v${FD_VERSION}/fd-v${FD_VERSION}-${TARGETARCH:-amd64}-unknown-linux-musl.tar.gz" \
+RUN ARCH_ALT=$(sed 's/amd64/x86_64/' <<< "${TARGETARCH:-amd64}") && \
+    curl -fsSL "https://github.com/sharkdp/fd/releases/download/v${FD_VERSION}/fd-v${FD_VERSION}-${ARCH_ALT}-unknown-linux-musl.tar.gz" \
     | tar xz -C /tmp && \
     mv /tmp/fd-*/fd /usr/local/bin/fd && \
     rm -rf /tmp/fd-*
