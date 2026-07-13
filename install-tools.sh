@@ -158,7 +158,7 @@ install_protoc_gen_connect_go() {
     if ! should_install PROTOC_GEN_CONNECT_GO; then return 0; fi
     echo "[install] protoc-gen-connect-go $PROTOC_GEN_CONNECT_GO_VERSION"
     go install "connectrpc.com/connect/cmd/protoc-gen-connect-go@${PROTOC_GEN_CONNECT_GO_VERSION}"
-    echo "[ok] protoc-gen-connect-go $PROTOC_GEN_CONNECT_CONNECT_GO_VERSION"
+    echo "[ok] protoc-gen-connect-go $PROTOC_GEN_CONNECT_GO_VERSION"
 }
 
 install_rg() {
