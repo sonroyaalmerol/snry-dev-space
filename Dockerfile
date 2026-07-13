@@ -105,6 +105,13 @@ RUN groupadd --gid 1000 snry && \
 
 COPY pi-config/ /usr/local/share/pi-seed/
 
+RUN sed -i \
+    -e 's/^#*PasswordAuthentication.*/PasswordAuthentication no/' \
+    -e 's/^#*PermitRootLogin.*/PermitRootLogin no/' \
+    -e 's/^#*ChallengeResponseAuthentication.*/ChallengeResponseAuthentication no/' \
+    -e 's/^#*UsePAM.*/UsePAM no/' \
+    /etc/ssh/sshd_config
+
 COPY entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
