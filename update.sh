@@ -1,4 +1,4 @@
-
+#!/usr/bin/env bash
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "$0")" && pwd)"
@@ -20,9 +20,9 @@ latest_npm_version() {
     npm view "@earendil-works/pi-coding-agent" version 2>/dev/null
 }
 
-latest_node_lts() {
-    curl -fsSL https://nodejs.org/dist/index.json 2>/dev/null \
-        | grep -o '"version":"[^"]*"' | head -1 | tr -d '"version:"'
+latest_bun_version() {
+    curl -fsSL https://api.github.com/repos/oven-sh/bun/releases/latest 2>/dev/null \
+        | grep -o '"tag_name":"bun-v[^"]*"' | head -1 | sed 's/"tag_name":"bun-v//;s/"//'
 }
 
 latest_go_stable() {
@@ -40,10 +40,10 @@ set_env() {
     local key="$1" value="$2"
     if grep -q "^${key}=" "${ENV_FILE}"; then
         sed -i "s|^${key}=.*|${key}=${value}|" "${ENV_FILE}"
-        log "${key} → ${value}"
+        log "${key} -> ${value}"
     else
         echo "${key}=${value}" >> "${ENV_FILE}"
-        log "${key} → ${value} (appended)"
+        log "${key} -> ${value} (appended)"
     fi
 }
 
@@ -60,16 +60,16 @@ update_pi() {
     log "Updating pi-coding-agent to ${version}..."
     set_env PI_VERSION "${version}"
     sync_dockerfile_default PI_VERSION "${version}"
-    ok "pi-coding-agent → ${version}"
+    ok "pi-coding-agent -> ${version}"
 }
 
-update_node() {
-    local version="${1:-$(latest_node_lts)}"
-    [ -z "${version}" ] && { err "Cannot determine latest Node version"; return 1; }
-    log "Updating Node.js to ${version}..."
-    set_env NODE_VERSION "${version}"
-    sync_dockerfile_default NODE_VERSION "${version}"
-    ok "Node.js → ${version}"
+update_bun() {
+    local version="${1:-$(latest_bun_version)}"
+    [ -z "${version}" ] && { err "Cannot determine latest Bun version"; return 1; }
+    log "Updating Bun to ${version}..."
+    set_env BUN_VERSION "${version}"
+    sync_dockerfile_default BUN_VERSION "${version}"
+    ok "Bun -> ${version}"
 }
 
 update_go() {
@@ -78,7 +78,7 @@ update_go() {
     log "Updating Go to ${version}..."
     set_env GO_VERSION "${version}"
     sync_dockerfile_default GO_VERSION "${version}"
-    ok "Go → ${version}"
+    ok "Go -> ${version}"
 }
 
 update_tools() {
@@ -104,13 +104,13 @@ update_tools() {
 
 rebuild() {
     log "Rebuilding image..."
-    docker compose build --no-cache "${SCRIPT_DIR}"
+    docker compose -f "${SCRIPT_DIR}/compose.yaml" build --no-cache
     ok "Image rebuilt"
 }
 
 update_all() {
     update_pi
-    update_node
+    update_bun
     update_go
     update_tools
 }
@@ -119,8 +119,8 @@ case "${1:-}" in
     pi)
         update_pi "${2:-}"
         ;;
-    node)
-        update_node "${2:-}"
+    bun)
+        update_bun "${2:-}"
         ;;
     go)
         update_go "${2:-}"
@@ -135,11 +135,11 @@ case "${1:-}" in
         rebuild
         ;;
     "")
-        echo "Usage: $0 {pi|node|go|tools|all|rebuild} [VERSION]"
+        echo "Usage: $0 {pi|bun|go|tools|all|rebuild} [VERSION]"
         echo ""
         echo "Commands:"
         echo "  pi [VERSION]     Update pi-coding-agent (defaults to latest)"
-        echo "  node [VERSION]   Update Node.js (defaults to latest)"
+        echo "  bun [VERSION]    Update Bun runtime (defaults to latest)"
         echo "  go [VERSION]     Update Go (defaults to latest)"
         echo "  tools            Update all Go/CLI tools to latest releases"
         echo "  all              Update everything to latest"

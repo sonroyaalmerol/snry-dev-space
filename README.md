@@ -33,8 +33,7 @@ kubectl apply -f k8s/auth.yaml
 # 3. Create persistent volume
 kubectl apply -f k8s/pvc.yaml
 
-# 4. Build and push your image, then deploy
-docker build -t snry-dev-space:latest .
+# 4. Deploy (image is pulled from GHCR)
 kubectl apply -f k8s/deployment.yaml
 
 # 5. Get a shell
@@ -55,6 +54,9 @@ Everything is version-pinned via `versions.env` and `Dockerfile` ARGs.
 # Update pi to latest
 ./update.sh pi
 
+# Update Bun to latest
+./update.sh bun
+
 # Update all Go/CLI tools to their latest releases
 ./update.sh tools
 
@@ -71,30 +73,32 @@ You can also override versions at build time:
 docker compose build --build-arg PI_VERSION=0.81.0
 ```
 
+Or trigger a build with version overrides via GitHub Actions workflow dispatch.
+
 ## Architecture
 
 ```
-┌─────────────────────────────────────────┐
-│  snry-dev-space container               │
-│                                         │
-│  Toolchain (baked into image):          │
-│    Node.js, pi, Go, rg, fd, gh, buf    │
-│    gopls, sqlc, goreleaser, protoc-*   │
-│                                         │
-│  Config seed (baked into image):        │
-│    settings.json, models.json, mcp.json │
-│    agents/, extensions/                 │
-│                                         │
-│  Runtime (mounted volumes):             │
-│    ~/.pi/agent/auth.json  ← k8s Secret │
-│    ~/.pi/agent/sessions/  ← PVC        │
-│    ~/.pi/agent/npm/       ← PVC        │
-│    ~/.pi/agent/skills/    ← PVC        │
-│    ~/workspace/           ← host mount  │
-└─────────────────────────────────────────┘
++---------------------------------------------+
+|  snry-dev-space container                    |
+|                                              |
+|  Toolchain (baked into image):               |
+|    Bun, pi, Go, rg, fd, gh, buf             |
+|    gopls, sqlc, goreleaser, protoc-*         |
+|                                              |
+|  Config seed (baked into image):              |
+|    settings.json, models.json, mcp.json       |
+|    agents/, extensions/                       |
+|                                              |
+|  Runtime (mounted volumes):                   |
+|    ~/.pi/agent/auth.json  <- k8s Secret      |
+|    ~/.pi/agent/sessions/  <- PVC             |
+|    ~/.pi/agent/npm/       <- PVC             |
+|    ~/.pi/agent/skills/    <- PVC             |
+|    ~/workspace/           <- host mount      |
++---------------------------------------------+
 ```
 
-- **Image layers** are the toolchain: rebuild to update Node, Go, pi, etc.
+- **Image layers** are the toolchain: rebuild to update Bun, Go, pi, etc.
 - **PVC** holds persistent state (sessions, skills, cache) across pod restarts
 - **Secret** holds auth.json: never baked into the image
 - On first run, `entrypoint.sh` seeds the config from `/usr/local/share/pi-seed/`
@@ -104,7 +108,7 @@ docker compose build --build-arg PI_VERSION=0.81.0
 | Component | ARG | Current |
 |-----------|-----|---------|
 | pi coding agent | `PI_VERSION` | 0.80.2 |
-| Node.js | `NODE_VERSION` | 26.3.1 |
+| Bun runtime | `BUN_VERSION` | 1.3.14 |
 | Go | `GO_VERSION` | 1.26.4 |
 | gopls | `GOPLS_VERSION` | v0.22.0 |
 | sqlc | `SQLC_VERSION` | v1.31.1 |

@@ -1,6 +1,6 @@
 
 ARG PI_VERSION=0.80.2
-ARG NODE_VERSION=26.3.1
+ARG BUN_VERSION=1.3.14
 ARG GO_VERSION=1.26.4
 
 ARG GOPLS_VERSION=v0.22.0
@@ -28,10 +28,14 @@ RUN go install golang.org/x/tools/gopls@${GOPLS_VERSION} && \
     go install google.golang.org/protobuf/cmd/protoc-gen-go@${PROTOC_GEN_GO_VERSION} && \
     go install connectrpc.com/connect/cmd/protoc-gen-connect-go@${PROTOC_GEN_CONNECT_GO_VERSION}
 
-FROM debian:bookworm-slim
+FROM oven/bun:${BUN_VERSION}-debian AS pi-install
 
 ARG PI_VERSION
-ARG NODE_VERSION
+
+RUN bun add -g @earendil-works/pi-coding-agent@${PI_VERSION}
+
+FROM debian:bookworm-slim
+
 ARG BUF_VERSION
 ARG RIPGREP_VERSION
 ARG FD_VERSION
@@ -53,17 +57,19 @@ RUN apt-get update && \
         python3-pip \
     && rm -rf /var/lib/apt/lists/*
 
-RUN curl -fsSL https://nodejs.org/dist/v${NODE_VERSION}/node-v${NODE_VERSION}-linux-${TARGETARCH}.tar.xz \
-    | tar -xJ -C /usr/local --strip-components=1 \
-    --exclude='*/CHANGELOG.md' \
-    --exclude='*/README.md' \
-    --exclude='*/LICENSE' && \
-    corepack enable && \
-    npm install -g npm@latest && \
-    npm cache clean --force
+COPY --from=oven/bun:1-debian /usr/local/bin/bun /usr/local/bin/bun
+COPY --from=oven/bun:1-debian /usr/local/bin/bunx /usr/local/bin/bunx
 
-RUN npm install -g @earendil-works/pi-coding-agent@${PI_VERSION} && \
-    npm cache clean --force
+RUN ln -sf /usr/local/bin/bun /usr/local/bin/node
+
+COPY --from=pi-install /root/.bun /root/.bun
+RUN cp -a /root/.bun /usr/local/share/bun-global && \
+    cp -a /usr/local/share/bun-global/install/global/node_modules/@earendil-works/pi-coding-agent/dist/cli.js /usr/local/bin/pi-entrypoint.js && \
+    cat > /usr/local/bin/pi <<'EOF'
+#!/bin/sh
+exec bun /usr/local/bin/pi-entrypoint.js "$@"
+EOF
+    && chmod +x /usr/local/bin/pi
 
 COPY --from=golang:1.26-bookworm /usr/local/go/ /usr/local/go/
 ENV PATH="/usr/local/go/bin:${PATH}"
@@ -101,14 +107,15 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 
 ENV HOME=/home/snry
 ENV PI_CODING_AGENT_DIR=/home/snry/.pi/agent
-ENV PATH="/home/snry/go/bin:${PATH}"
+ENV PATH="/home/snry/go/bin:/home/snry/.bun/bin:${PATH}"
+ENV BUN_INSTALL=/home/snry/.bun
 
 VOLUME ["/home/snry/.pi"]
 
 WORKDIR /home/snry/workspace
 
 HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
-    CMD which pi >/dev/null 2>&1 || exit 1
+    CMD which bun >/dev/null 2>&1 || exit 1
 
 USER snry
 

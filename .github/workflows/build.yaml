@@ -15,8 +15,8 @@ on:
       pi_version:
         description: "pi coding agent version override"
         required: false
-      node_version:
-        description: "Node.js version override"
+      bun_version:
+        description: "Bun runtime version override"
         required: false
       go_version:
         description: "Go version override"
@@ -62,16 +62,19 @@ jobs:
         run: |
           ARGS=""
           if [ -n "${{ github.event.inputs.pi_version }}" ]; then
-            ARGS="$ARGS\nPI_VERSION=${{ github.event.inputs.pi_version }}"
+            ARGS="$ARGS
+          PI_VERSION=${{ github.event.inputs.pi_version }}"
           fi
-          if [ -n "${{ github.event.inputs.node_version }}" ]; then
-            ARGS="$ARGS\nNODE_VERSION=${{ github.event.inputs.node_version }}"
+          if [ -n "${{ github.event.inputs.bun_version }}" ]; then
+            ARGS="$ARGS
+          BUN_VERSION=${{ github.event.inputs.bun_version }}"
           fi
           if [ -n "${{ github.event.inputs.go_version }}" ]; then
-            ARGS="$ARGS\nGO_VERSION=${{ github.event.inputs.go_version }}"
+            ARGS="$ARGS
+          GO_VERSION=${{ github.event.inputs.go_version }}"
           fi
           echo "build_args<<EOF" >> "$GITHUB_OUTPUT"
-          echo -e "$ARGS" | tail -n +1 >> "$GITHUB_OUTPUT"
+          echo "$ARGS" | sed '/^$/d' >> "$GITHUB_OUTPUT"
           echo "EOF" >> "$GITHUB_OUTPUT"
 
       - name: Build and push
