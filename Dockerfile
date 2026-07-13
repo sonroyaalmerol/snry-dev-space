@@ -26,7 +26,8 @@ RUN sed -i \
     -e 's/^#*PermitRootLogin.*/PermitRootLogin no/' \
     -e 's/^#*ChallengeResponseAuthentication.*/ChallengeResponseAuthentication no/' \
     -e 's/^#*UsePAM.*/UsePAM no/' \
-    /etc/ssh/sshd_config
+    /etc/ssh/sshd_config \
+    && echo 'SetEnv PATH=/home/snry/.pi/bin:/home/snry/.pi/gopath/bin:/home/snry/.pi/sdk/go/bin:/home/snry/.pi/bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin' >> /etc/ssh/sshd_config
 
 COPY --from=oven/bun:1-debian /usr/local/bin/bun /usr/local/bin/bun
 COPY --from=oven/bun:1-debian /usr/local/bin/bunx /usr/local/bin/bunx
@@ -46,7 +47,8 @@ COPY entrypoint.sh install-tools.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/install-tools.sh
 
 RUN echo 'export PATH="/home/snry/.pi/bin:/home/snry/.pi/gopath/bin:/home/snry/.pi/sdk/go/bin:/home/snry/.pi/bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"' >> /home/snry/.bashrc && \
-    echo 'export PATH="/home/snry/.pi/bin:/home/snry/.pi/gopath/bin:/home/snry/.pi/sdk/go/bin:/home/snry/.pi/bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"' >> /home/snry/.profile
+    echo 'export PATH="/home/snry/.pi/bin:/home/snry/.pi/gopath/bin:/home/snry/.pi/sdk/go/bin:/home/snry/.pi/bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"' >> /home/snry/.profile && \
+    echo 'PATH="/home/snry/.pi/bin:/home/snry/.pi/gopath/bin:/home/snry/.pi/sdk/go/bin:/home/snry/.pi/bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"' >> /etc/environment
 
 ENV HOME=/home/snry
 ENV PI_CODING_AGENT_DIR=/home/snry/.pi/agent
