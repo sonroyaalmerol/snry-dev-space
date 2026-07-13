@@ -61,7 +61,7 @@ COPY --from=oven/bun:1-debian /usr/local/bin/bunx /usr/local/bin/bunx
 
 RUN ln -sf /usr/local/bin/bun /usr/local/bin/node
 
-COPY --from=pi-install /root/.bun /root/.bun
+COPY --from=pi-install /root/.bun /usr/local/share/bun-global
 RUN printf '#!/bin/sh\nexec bun /usr/local/share/bun-global/install/global/node_modules/@earendil-works/pi-coding-agent/dist/cli.js "$@"\n' > /usr/local/bin/pi && \
     chmod +x /usr/local/bin/pi
 
