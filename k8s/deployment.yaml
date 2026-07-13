@@ -1,0 +1,60 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: snry-dev-space
+  namespace: snry
+  labels:
+    app.kubernetes.io/name: snry-dev-space
+    app.kubernetes.io/part-of: snry
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: snry-dev-space
+  template:
+    metadata:
+      labels:
+        app: snry-dev-space
+    spec:
+      containers:
+        - name: snry
+          image: snry-dev-space:latest
+          imagePullPolicy: IfNotPresent
+          env:
+            - name: PI_CODING_AGENT_DIR
+              value: /home/snry/.pi/agent
+            - name: TERM
+              value: xterm-256color
+          volumeMounts:
+            - name: pi-home
+              mountPath: /home/snry/.pi
+            - name: auth
+              mountPath: /home/snry/.pi/agent/auth.json
+              subPath: auth.json
+              readOnly: true
+            - name: workspace
+              mountPath: /home/snry/workspace
+          stdin: true
+          tty: true
+          resources:
+            requests:
+              cpu: "1"
+              memory: "2Gi"
+            limits:
+              cpu: "4"
+              memory: "8Gi"
+          livenessProbe:
+            exec:
+              command: ["which", "pi"]
+            initialDelaySeconds: 30
+            periodSeconds: 60
+            timeoutSeconds: 10
+      volumes:
+        - name: pi-home
+          persistentVolumeClaim:
+            claimName: snry-pi-home
+        - name: auth
+          secret:
+            secretName: snry-auth
+        - name: workspace
+          emptyDir: {}

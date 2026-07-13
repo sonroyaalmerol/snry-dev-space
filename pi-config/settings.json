@@ -1,0 +1,101 @@
+{
+  "lastChangelogVersion": "0.80.2",
+  "defaultProvider": "ollama-cloud",
+  "defaultModel": "glm-5.1",
+  "defaultThinkingLevel": "high",
+  "compaction": {
+    "enabled": true,
+    "reserveTokens": 125000,
+    "keepRecentTokens": 20000
+  },
+  "packages": [
+    {
+      "source": "npm:pi-prompt-template-model",
+      "extensions": [
+        "-index.ts"
+      ]
+    },
+    {
+      "source": "npm:pi-skill-palette",
+      "extensions": [
+        "-index.ts"
+      ]
+    },
+    {
+      "source": "npm:pi-web-access",
+      "extensions": [
+        "-index.ts"
+      ],
+      "skills": [
+        "-skills/librarian/SKILL.md"
+      ]
+    },
+    "npm:pi-ask-user",
+    "npm:pi-intercom",
+    "git:github.com/fgrehm/pi-ollama-cloud",
+    {
+      "source": "npm:pi-hooks",
+      "extensions": [
+        "-permission/permission.ts",
+        "-repeat/repeat.ts",
+        "-ralph-loop/ralph-loop.ts"
+      ]
+    }
+  ],
+  "subagents": {
+    "agentOverrides": {
+      "scout": {
+        "model": "ollama-cloud/gemma4:31b",
+        "thinking": "low",
+        "fallbackModels": [
+          "google-gemini-cli/gemini-2.5-flash",
+          "ollama-cloud/glm-5.1"
+        ]
+      },
+      "planner": {
+        "model": "google-gemini-cli/gemini-3-flash-preview",
+        "thinking": "high",
+        "fallbackModels": [
+          "ollama-cloud/glm-5.1",
+          "ollama-cloud/qwen3.5:397b"
+        ]
+      },
+      "worker": {
+        "model": "ollama-cloud/gemma4:31b",
+        "thinking": "medium",
+        "fallbackModels": [
+          "google-gemini-cli/gemini-3-flash-preview",
+          "zai/glm-4.7"
+        ]
+      },
+      "reviewer": {
+        "model": "ollama-cloud/glm-5.1",
+        "thinking": "medium",
+        "fallbackModels": [
+          "google-gemini-cli/gemini-3-flash-preview",
+          "google-gemini-cli/gemini-3.1-pro-preview"
+        ]
+      },
+      "researcher": {
+        "model": "google-gemini-cli/gemini-2.5-flash",
+        "thinking": "medium",
+        "fallbackModels": [
+          "ollama-cloud/gemma4:31b",
+          "ollama-cloud/glm-5.1"
+        ]
+      },
+      "context-builder": {
+        "model": "ollama-cloud/glm-5.1",
+        "thinking": "low",
+        "fallbackModels": [
+          "ollama-cloud/gemma4:31b",
+          "google-gemini-cli/gemini-2.5-flash"
+        ]
+      }
+    }
+  },
+  "skills": [
+    "-skills/git-checkpoints/SKILL.md"
+  ],
+  "theme": "dark"
+}

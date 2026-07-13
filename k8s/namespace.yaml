@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: snry
+  labels:
+    app.kubernetes.io/name: snry-dev-space
+    app.kubernetes.io/part-of: snry

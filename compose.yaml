@@ -1,0 +1,32 @@
+
+services:
+  snry:
+    build:
+      context: .
+      dockerfile: Dockerfile
+      args:
+        PI_VERSION: "${PI_VERSION:-0.80.2}"
+        NODE_VERSION: "${NODE_VERSION:-26.3.1}"
+        GO_VERSION: "${GO_VERSION:-1.26.4}"
+    image: snry-dev-space:latest
+    container_name: snry-dev-space
+    hostname: snry
+    init: true
+    environment:
+      - PI_CODING_AGENT_DIR=/home/snry/.pi/agent
+      - TERM=xterm-256color
+    volumes:
+      - snry-home:/home/snry/.pi
+      - ./workspace:/home/snry/workspace
+    secrets:
+      - snry-auth
+    stdin_open: true
+    tty: true
+
+volumes:
+  snry-home:
+    driver: local
+
+secrets:
+  snry-auth:
+    file: ./secrets/auth.json

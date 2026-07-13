@@ -1,0 +1,24 @@
+# =============================================================================
+# Snry Dev Space: Auth Secret Template
+# =============================================================================
+# Copy this file to auth.yaml and fill in your actual auth.json content.
+#   cp auth.yaml.tmpl auth.yaml
+#   # Edit auth.yaml with your real credentials
+#   kubectl apply -f auth.yaml
+#
+# NEVER commit auth.yaml to version control.
+# =============================================================================
+apiVersion: v1
+kind: Secret
+metadata:
+  name: snry-auth
+  namespace: snry
+type: Opaque
+stringData:
+  auth.json: |
+    {
+      "your-provider": {
+        "type": "api_key",
+        "key": "YOUR_API_KEY_HERE"
+      }
+    }

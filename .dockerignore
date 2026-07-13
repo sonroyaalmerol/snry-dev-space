@@ -1,0 +1,8 @@
+node_modules/
+.git/
+secrets/
+workspace/
+update.sh
+compose.yaml
+versions.env
+k8s/
