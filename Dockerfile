@@ -98,7 +98,7 @@ RUN curl -fsSL "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_$
 
 RUN groupadd --gid 1000 snry && \
     useradd --uid 1000 --gid snry --shell /bin/bash --create-home snry && \
-    passwd -u snry && \
+    usermod -p '*' snry && \
     mkdir -p /home/snry/.pi/agent /home/snry/go/bin /home/snry/workspace \
              /home/snry/.ssh /run/sshd && \
     chown -R snry:snry /home/snry/.pi /home/snry/go /home/snry/workspace /home/snry/.ssh && \
