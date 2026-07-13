@@ -47,8 +47,10 @@ RUN apt-get update && \
         ca-certificates \
         curl \
         git \
+        openssh-server \
         openssh-client \
         gnupg \
+        gosu \
         libc6-dev \
         gcc \
         make \
@@ -96,8 +98,10 @@ RUN curl -fsSL "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_$
 
 RUN groupadd --gid 1000 snry && \
     useradd --uid 1000 --gid snry --shell /bin/bash --create-home snry && \
-    mkdir -p /home/snry/.pi/agent /home/snry/go/bin /home/snry/workspace && \
-    chown -R snry:snry /home/snry/.pi /home/snry/go /home/snry/workspace
+    mkdir -p /home/snry/.pi/agent /home/snry/go/bin /home/snry/workspace \
+             /home/snry/.ssh /run/sshd && \
+    chown -R snry:snry /home/snry/.pi /home/snry/go /home/snry/workspace /home/snry/.ssh && \
+    chmod 700 /home/snry/.ssh
 
 COPY pi-config/ /usr/local/share/pi-seed/
 
@@ -109,14 +113,14 @@ ENV PI_CODING_AGENT_DIR=/home/snry/.pi/agent
 ENV PATH="/home/snry/go/bin:/home/snry/.bun/bin:${PATH}"
 ENV BUN_INSTALL=/home/snry/.bun
 
+EXPOSE 22
+
 VOLUME ["/home/snry/.pi"]
 
 WORKDIR /home/snry/workspace
 
 HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
-    CMD which bun >/dev/null 2>&1 || exit 1
-
-USER snry
+    CMD pgrep sshd >/dev/null 2>&1 && which bun >/dev/null 2>&1 || exit 1
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["pi"]

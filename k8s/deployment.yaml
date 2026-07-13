@@ -18,8 +18,11 @@ spec:
     spec:
       containers:
         - name: snry
-          image: snry-dev-space:latest
+          image: ghcr.io/sonroyaalmerol/snry-dev-space:latest
           imagePullPolicy: IfNotPresent
+          ports:
+            - containerPort: 22
+              name: ssh
           env:
             - name: PI_CODING_AGENT_DIR
               value: /home/snry/.pi/agent
@@ -32,10 +35,12 @@ spec:
               mountPath: /home/snry/.pi/agent/auth.json
               subPath: auth.json
               readOnly: true
+            - name: ssh-key
+              mountPath: /home/snry/.ssh/authorized_keys
+              subPath: authorized_keys
+              readOnly: true
             - name: workspace
               mountPath: /home/snry/workspace
-          stdin: true
-          tty: true
           resources:
             requests:
               cpu: "1"
@@ -45,10 +50,14 @@ spec:
               memory: "8Gi"
           livenessProbe:
             exec:
-              command: ["which", "pi"]
-            initialDelaySeconds: 30
-            periodSeconds: 60
-            timeoutSeconds: 10
+              command: ["pgrep", "sshd"]
+            initialDelaySeconds: 10
+            periodSeconds: 30
+          readinessProbe:
+            exec:
+              command: ["pgrep", "sshd"]
+            initialDelaySeconds: 5
+            periodSeconds: 10
       volumes:
         - name: pi-home
           persistentVolumeClaim:
@@ -56,5 +65,24 @@ spec:
         - name: auth
           secret:
             secretName: snry-auth
+        - name: ssh-key
+          secret:
+            secretName: snry-ssh-key
         - name: workspace
           emptyDir: {}
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: snry-ssh
+  namespace: snry
+  labels:
+    app.kubernetes.io/name: snry-dev-space
+spec:
+  type: LoadBalancer
+  selector:
+    app: snry-dev-space
+  ports:
+    - port: 22
+      targetPort: ssh
+      name: ssh

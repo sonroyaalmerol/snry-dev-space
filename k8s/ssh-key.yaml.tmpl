@@ -1,8 +1,8 @@
 # =============================================================================
-# Auth Secret - API credentials for pi coding agent
+# SSH Key Secret - authorized_keys for SSH access
 # =============================================================================
-# Create this secret with your actual auth.json:
-#   kubectl create secret generic snry-auth \
-#     --from-file=auth.json=./auth.json \
+# Create this secret with your SSH public key:
+#   kubectl create secret generic snry-ssh-key \
+#     --from-file=authorized_keys=./authorized_keys \
 #     -n snry
 # =============================================================================

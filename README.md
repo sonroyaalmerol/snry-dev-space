@@ -1,21 +1,27 @@
 # Snry Dev Space
 
-Containerized development environment with the pi coding agent, ready for Kubernetes.
+Containerized development environment with the pi coding agent, SSH access, and full Go/Bun toolchain, ready for Kubernetes.
 
 ## Quick Start (Docker Compose)
 
 ```bash
-# 1. Copy your auth.json into the secrets directory
+# 1. Copy your auth.json and SSH public key into secrets/
 cp /path/to/your/auth.json secrets/auth.json
+cp ~/.ssh/id_ed25519.pub secrets/authorized_keys
+# Or add multiple keys, one per line:
+cat ~/.ssh/id_ed25519.pub ~/.ssh/id_rsa.pub > secrets/authorized_keys
 
 # 2. Build and run
 docker compose build
 docker compose up -d
 
-# 3. Get a shell
+# 3. SSH in
+ssh -p 2222 snry@localhost
+
+# 4. Or use docker exec
 docker compose exec snry bash
 
-# 4. Run pi
+# 5. Run pi
 docker compose exec snry pi
 ```
 
@@ -25,20 +31,37 @@ docker compose exec snry pi
 # 1. Create namespace
 kubectl apply -f k8s/namespace.yaml
 
-# 2. Create auth secret (edit with your real credentials first)
-cp k8s/auth.yaml.tmpl k8s/auth.yaml
-# Edit k8s/auth.yaml with your actual auth.json content
-kubectl apply -f k8s/auth.yaml
+# 2. Create auth secret
+kubectl create secret generic snry-auth \
+  --from-file=auth.json=./secrets/auth.json -n snry
 
-# 3. Create persistent volume
+# 3. Create SSH key secret
+kubectl create secret generic snry-ssh-key \
+  --from-file=authorized_keys=./secrets/authorized_keys -n snry
+
+# 4. Create persistent volume
 kubectl apply -f k8s/pvc.yaml
 
-# 4. Deploy (image is pulled from GHCR)
+# 5. Deploy (image is pulled from GHCR)
 kubectl apply -f k8s/deployment.yaml
 
-# 5. Get a shell
+# 6. SSH in (port-forward for testing)
+kubectl port-forward -n snry svc/snry-ssh 2222:22 &
+ssh -p 2222 snry@localhost
+
+# 7. Or use kubectl exec
 kubectl exec -it -n snry deployment/snry-dev-space -- bash
 ```
+
+## SSH Access
+
+The container runs an OpenSSH server on port 22 for remote shell access. Key-based authentication only (no password auth).
+
+**Docker Compose**: SSH exposed on host port 2222. Mount your `authorized_keys` via Docker secrets.
+
+**Kubernetes**: Exposed via `snry-ssh` LoadBalancer service. Mount your `authorized_keys` via a k8s Secret.
+
+Host keys are auto-generated on first run and stored in `/etc/ssh/`. For production, consider pre-generating and mounting them as secrets.
 
 ## Updating
 
@@ -81,6 +104,9 @@ Or trigger a build with version overrides via GitHub Actions workflow dispatch.
 +---------------------------------------------+
 |  snry-dev-space container                    |
 |                                              |
+|  Services:                                   |
+|    sshd (port 22) - key-based auth only      |
+|                                              |
 |  Toolchain (baked into image):               |
 |    Bun, pi, Go, rg, fd, gh, buf             |
 |    gopls, sqlc, goreleaser, protoc-*         |
@@ -94,14 +120,16 @@ Or trigger a build with version overrides via GitHub Actions workflow dispatch.
 |    ~/.pi/agent/sessions/  <- PVC             |
 |    ~/.pi/agent/npm/       <- PVC             |
 |    ~/.pi/agent/skills/    <- PVC             |
+|    ~/.ssh/authorized_keys <- k8s Secret      |
 |    ~/workspace/           <- host mount      |
 +---------------------------------------------+
 ```
 
 - **Image layers** are the toolchain: rebuild to update Bun, Go, pi, etc.
 - **PVC** holds persistent state (sessions, skills, cache) across pod restarts
-- **Secret** holds auth.json: never baked into the image
+- **Secrets** hold auth.json and SSH authorized_keys: never baked into image
 - On first run, `entrypoint.sh` seeds the config from `/usr/local/share/pi-seed/`
+- Entrypoint starts sshd as root, then drops to `snry` user for the main process
 
 ## Version Pins
 

@@ -12,6 +12,8 @@ services:
     container_name: snry-dev-space
     hostname: snry
     init: true
+    ports:
+      - "2222:22"
     environment:
       - PI_CODING_AGENT_DIR=/home/snry/.pi/agent
       - TERM=xterm-256color
@@ -20,6 +22,7 @@ services:
       - ./workspace:/home/snry/workspace
     secrets:
       - snry-auth
+      - snry-ssh-key
     stdin_open: true
     tty: true
 
@@ -30,3 +33,5 @@ volumes:
 secrets:
   snry-auth:
     file: ./secrets/auth.json
+  snry-ssh-key:
+    file: ./secrets/authorized_keys

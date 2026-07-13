@@ -1,2 +1,3 @@
 secrets/auth.json
+secrets/authorized_keys
 *.log
