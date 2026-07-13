@@ -64,12 +64,10 @@ RUN ln -sf /usr/local/bin/bun /usr/local/bin/node
 
 COPY --from=pi-install /root/.bun /root/.bun
 RUN cp -a /root/.bun /usr/local/share/bun-global && \
-    cp -a /usr/local/share/bun-global/install/global/node_modules/@earendil-works/pi-coding-agent/dist/cli.js /usr/local/bin/pi-entrypoint.js && \
-    cat > /usr/local/bin/pi <<'EOF'
-#!/bin/sh
-exec bun /usr/local/bin/pi-entrypoint.js "$@"
-EOF
-    && chmod +x /usr/local/bin/pi
+    cp -a /usr/local/share/bun-global/install/global/node_modules/@earendil-works/pi-coding-agent/dist/cli.js /usr/local/bin/pi-entrypoint.js
+
+RUN printf '#!/bin/sh\nexec bun /usr/local/bin/pi-entrypoint.js "$@"\n' > /usr/local/bin/pi && \
+    chmod +x /usr/local/bin/pi
 
 COPY --from=golang:1.26-bookworm /usr/local/go/ /usr/local/go/
 ENV PATH="/usr/local/go/bin:${PATH}"
