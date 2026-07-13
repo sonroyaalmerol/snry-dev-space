@@ -45,6 +45,8 @@ COPY pi-config/ /usr/local/share/pi-seed/
 COPY entrypoint.sh install-tools.sh /usr/local/bin/
 RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/install-tools.sh
 
+RUN echo 'export PATH="/home/snry/.pi/bin:/home/snry/.pi/gopath/bin:/home/snry/.pi/sdk/go/bin:/home/snry/.pi/bun/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"' >> /home/snry/.bashrc
+
 ENV HOME=/home/snry
 ENV PI_CODING_AGENT_DIR=/home/snry/.pi/agent
 ENV BUN_INSTALL=/home/snry/.pi/bun
