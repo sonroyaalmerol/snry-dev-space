@@ -62,10 +62,7 @@ COPY --from=oven/bun:1-debian /usr/local/bin/bunx /usr/local/bin/bunx
 RUN ln -sf /usr/local/bin/bun /usr/local/bin/node
 
 COPY --from=pi-install /root/.bun /root/.bun
-RUN cp -a /root/.bun /usr/local/share/bun-global && \
-    cp -a /usr/local/share/bun-global/install/global/node_modules/@earendil-works/pi-coding-agent/dist/cli.js /usr/local/bin/pi-entrypoint.js
-
-RUN printf '#!/bin/sh\nexec bun /usr/local/bin/pi-entrypoint.js "$@"\n' > /usr/local/bin/pi && \
+RUN printf '#!/bin/sh\nexec bun /usr/local/share/bun-global/install/global/node_modules/@earendil-works/pi-coding-agent/dist/cli.js "$@"\n' > /usr/local/bin/pi && \
     chmod +x /usr/local/bin/pi
 
 COPY --from=golang:1.26-bookworm /usr/local/go/ /usr/local/go/
