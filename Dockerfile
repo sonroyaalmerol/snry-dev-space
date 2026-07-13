@@ -40,8 +40,7 @@ ARG BUF_VERSION
 ARG RIPGREP_VERSION
 ARG FD_VERSION
 ARG GH_VERSION
-
-ARG TARGETARCH=amd64
+ARG TARGETARCH
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -76,21 +75,22 @@ ENV GOBIN=/home/snry/go/bin
 
 COPY --from=go-tools /go/bin/ /usr/local/bin/
 
-RUN curl -fsSL https://github.com/bufbuild/buf/releases/download/v${BUF_VERSION}/buf-Linux-${TARGETARCH} \
+RUN ARCH=$(printf '%s' "${TARGETARCH:-amd64}" | sed 's/amd64/x86_64/') && \
+    curl -fsSL "https://github.com/bufbuild/buf/releases/download/v${BUF_VERSION}/buf-Linux-${ARCH}" \
     -o /usr/local/bin/buf && \
     chmod +x /usr/local/bin/buf
 
-RUN curl -fsSL https://github.com/BurntSushi/ripgrep/releases/download/${RIPGREP_VERSION}/ripgrep-${RIPGREP_VERSION}-${TARGETARCH}-unknown-linux-musl.tar.gz \
+RUN curl -fsSL "https://github.com/BurntSushi/ripgrep/releases/download/${RIPGREP_VERSION}/ripgrep-${RIPGREP_VERSION}-${TARGETARCH:-amd64}-unknown-linux-musl.tar.gz" \
     | tar xz -C /tmp && \
     mv /tmp/ripgrep-*/rg /usr/local/bin/rg && \
     rm -rf /tmp/ripgrep-*
 
-RUN curl -fsSL https://github.com/sharkdp/fd/releases/download/v${FD_VERSION}/fd-v${FD_VERSION}-${TARGETARCH}-unknown-linux-musl.tar.gz \
+RUN curl -fsSL "https://github.com/sharkdp/fd/releases/download/v${FD_VERSION}/fd-v${FD_VERSION}-${TARGETARCH:-amd64}-unknown-linux-musl.tar.gz" \
     | tar xz -C /tmp && \
     mv /tmp/fd-*/fd /usr/local/bin/fd && \
     rm -rf /tmp/fd-*
 
-RUN curl -fsSL https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${TARGETARCH}.tar.gz \
+RUN curl -fsSL "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${TARGETARCH:-amd64}.tar.gz" \
     | tar xz -C /tmp && \
     mv /tmp/gh_*/bin/gh /usr/local/bin/gh && \
     rm -rf /tmp/gh_*
