@@ -4,10 +4,6 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
-      args:
-        PI_VERSION: "${PI_VERSION:-0.80.2}"
-        BUN_VERSION: "${BUN_VERSION:-1.3.14}"
-        GO_VERSION: "${GO_VERSION:-1.26.4}"
     image: ghcr.io/sonroyaalmerol/snry-dev-space:latest
     container_name: snry-dev-space
     hostname: snry
@@ -15,6 +11,7 @@ services:
     ports:
       - "2222:22"
     environment:
+      - INSTALL_DEFAULTS=true
       - PI_CODING_AGENT_DIR=/home/snry/.pi/agent
       - TERM=xterm-256color
     volumes:

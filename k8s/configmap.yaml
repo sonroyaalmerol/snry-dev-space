@@ -1,0 +1,7 @@
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: snry-tools
+  namespace: snry
+data:
+  INSTALL_DEFAULTS: "true"

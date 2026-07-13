@@ -23,6 +23,9 @@ spec:
           ports:
             - containerPort: 22
               name: ssh
+          envFrom:
+            - configMapRef:
+                name: snry-tools
           env:
             - name: PI_CODING_AGENT_DIR
               value: /home/snry/.pi/agent

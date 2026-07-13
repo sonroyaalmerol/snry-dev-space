@@ -1,46 +1,8 @@
 
-ARG PI_VERSION=0.80.2
-ARG BUN_VERSION=1.3.14
-ARG GO_VERSION=1.26.4
-
-ARG GOPLS_VERSION=v0.22.0
-ARG SQLC_VERSION=v1.31.1
-ARG BUF_VERSION=1.71.0
-ARG GORELEASER_VERSION=v2.11.0
-ARG PROTOC_GEN_GO_VERSION=v1.36.11
-ARG PROTOC_GEN_CONNECT_GO_VERSION=v1.20.0
-
-ARG RIPGREP_VERSION=15.1.0
-ARG FD_VERSION=10.4.2
-ARG GH_VERSION=2.95.0
-
-FROM golang:${GO_VERSION}-bookworm AS go-tools
-
-ARG GOPLS_VERSION
-ARG SQLC_VERSION
-ARG GORELEASER_VERSION
-ARG PROTOC_GEN_GO_VERSION
-ARG PROTOC_GEN_CONNECT_GO_VERSION
-
-RUN go install golang.org/x/tools/gopls@${GOPLS_VERSION} && \
-    go install github.com/sqlc-dev/sqlc/cmd/sqlc@${SQLC_VERSION} && \
-    go install github.com/goreleaser/goreleaser/v2@${GORELEASER_VERSION} && \
-    go install google.golang.org/protobuf/cmd/protoc-gen-go@${PROTOC_GEN_GO_VERSION} && \
-    go install connectrpc.com/connect/cmd/protoc-gen-connect-go@${PROTOC_GEN_CONNECT_GO_VERSION}
-
-FROM oven/bun:${BUN_VERSION}-debian AS pi-install
-
-ARG PI_VERSION
-
-RUN bun add -g @earendil-works/pi-coding-agent@${PI_VERSION}
-
 FROM debian:bookworm-slim
 
-ARG BUF_VERSION
-ARG RIPGREP_VERSION
-ARG FD_VERSION
-ARG GH_VERSION
-ARG TARGETARCH
+ENV PI_VERSION=0.80.2
+ENV INSTALL_DEFAULTS=true
 
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
@@ -56,55 +18,8 @@ RUN apt-get update && \
         make \
         python3 \
         python3-pip \
+        procps \
     && rm -rf /var/lib/apt/lists/*
-
-COPY --from=oven/bun:1-debian /usr/local/bin/bun /usr/local/bin/bun
-COPY --from=oven/bun:1-debian /usr/local/bin/bunx /usr/local/bin/bunx
-
-RUN ln -sf /usr/local/bin/bun /usr/local/bin/node
-
-COPY --from=pi-install /root/.bun /usr/local/share/bun-global
-RUN printf '#!/bin/sh\nexec bun /usr/local/share/bun-global/install/global/node_modules/@earendil-works/pi-coding-agent/dist/cli.js "$@"\n' > /usr/local/bin/pi && \
-    chmod +x /usr/local/bin/pi
-
-COPY --from=golang:1.26-bookworm /usr/local/go/ /usr/local/go/
-ENV PATH="/usr/local/go/bin:${PATH}"
-ENV GOPATH=/home/snry/go
-ENV GOBIN=/home/snry/go/bin
-
-COPY --from=go-tools /go/bin/ /usr/local/bin/
-
-RUN ARCH_ALT=$(echo "${TARGETARCH:-amd64}" | sed 's/amd64/x86_64/') && \
-    curl -fsSL "https://github.com/bufbuild/buf/releases/download/v${BUF_VERSION}/buf-Linux-${ARCH_ALT}" \
-    -o /usr/local/bin/buf && \
-    chmod +x /usr/local/bin/buf
-
-RUN ARCH_ALT=$(echo "${TARGETARCH:-amd64}" | sed 's/amd64/x86_64/') && \
-    curl -fsSL "https://github.com/BurntSushi/ripgrep/releases/download/${RIPGREP_VERSION}/ripgrep-${RIPGREP_VERSION}-${ARCH_ALT}-unknown-linux-musl.tar.gz" \
-    | tar xz -C /tmp && \
-    mv /tmp/ripgrep-*/rg /usr/local/bin/rg && \
-    rm -rf /tmp/ripgrep-*
-
-RUN ARCH_ALT=$(echo "${TARGETARCH:-amd64}" | sed 's/amd64/x86_64/') && \
-    curl -fsSL "https://github.com/sharkdp/fd/releases/download/v${FD_VERSION}/fd-v${FD_VERSION}-${ARCH_ALT}-unknown-linux-musl.tar.gz" \
-    | tar xz -C /tmp && \
-    mv /tmp/fd-*/fd /usr/local/bin/fd && \
-    rm -rf /tmp/fd-*
-
-RUN curl -fsSL "https://github.com/cli/cli/releases/download/v${GH_VERSION}/gh_${GH_VERSION}_linux_${TARGETARCH:-amd64}.tar.gz" \
-    | tar xz -C /tmp && \
-    mv /tmp/gh_*/bin/gh /usr/local/bin/gh && \
-    rm -rf /tmp/gh_*
-
-RUN groupadd --gid 1000 snry && \
-    useradd --uid 1000 --gid snry --shell /bin/bash --create-home snry && \
-    usermod -p '*' snry && \
-    mkdir -p /home/snry/.pi/agent /home/snry/go/bin /home/snry/workspace \
-             /home/snry/.ssh /run/sshd && \
-    chown -R snry:snry /home/snry/.pi /home/snry/go /home/snry/workspace /home/snry/.ssh && \
-    chmod 700 /home/snry/.ssh
-
-COPY pi-config/ /usr/local/share/pi-seed/
 
 RUN sed -i \
     -e 's/^#*PasswordAuthentication.*/PasswordAuthentication no/' \
@@ -113,22 +28,35 @@ RUN sed -i \
     -e 's/^#*UsePAM.*/UsePAM no/' \
     /etc/ssh/sshd_config
 
-COPY entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh
+COPY --from=oven/bun:1-debian /usr/local/bin/bun /usr/local/bin/bun
+COPY --from=oven/bun:1-debian /usr/local/bin/bunx /usr/local/bin/bunx
+
+RUN groupadd --gid 1000 snry && \
+    useradd --uid 1000 --gid snry --shell /bin/bash --create-home snry && \
+    usermod -p '*' snry && \
+    mkdir -p /home/snry/.pi/agent /home/snry/.ssh /run/sshd && \
+    chown -R snry:snry /home/snry/.pi /home/snry/.ssh && \
+    chmod 700 /home/snry/.ssh
+
+COPY pi-config/ /usr/local/share/pi-seed/
+
+COPY entrypoint.sh install-tools.sh /usr/local/bin/
+RUN chmod +x /usr/local/bin/entrypoint.sh /usr/local/bin/install-tools.sh
 
 ENV HOME=/home/snry
 ENV PI_CODING_AGENT_DIR=/home/snry/.pi/agent
-ENV PATH="/home/snry/go/bin:/home/snry/.bun/bin:${PATH}"
-ENV BUN_INSTALL=/home/snry/.bun
+ENV BUN_INSTALL=/home/snry/.pi/bun
+ENV GOPATH=/home/snry/.pi/gopath
+ENV GOROOT=/home/snry/.pi/sdk/go
+ENV PATH="/home/snry/.pi/bin:/home/snry/.pi/gopath/bin:/home/snry/.pi/sdk/go/bin:/home/snry/.pi/bun/bin:/usr/local/bin:/usr/bin:/bin"
 
 EXPOSE 22
-
 VOLUME ["/home/snry/.pi"]
 
 WORKDIR /home/snry/workspace
 
-HEALTHCHECK --interval=60s --timeout=10s --start-period=30s --retries=3 \
-    CMD pgrep sshd >/dev/null 2>&1 && which bun >/dev/null 2>&1 || exit 1
+HEALTHCHECK --interval=60s --timeout=10s --start-period=120s --retries=3 \
+    CMD pgrep sshd >/dev/null 2>&1 || exit 1
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["pi"]
